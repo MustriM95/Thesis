@@ -1,0 +1,5 @@
+[deps]
+DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
+GMT = "5752ebe1-31b9-557e-87aa-f909b540aa54"
+MiCRM = "a39c0ef7-b77e-47b1-a1dd-f967908226eb"
+ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
