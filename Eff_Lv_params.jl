@@ -18,6 +18,8 @@ function Eff_LV_params(; name, p, sol)
     m = p[:m]
     u = p[:u]
 
+    δ(x, y) = ==(x, y)
+
 
     Ceq = sol[1:N, length(sol)]
     Req = sol[(N+1):(N+M), length(sol)]
