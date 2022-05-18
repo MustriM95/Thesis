@@ -3,7 +3,7 @@ Function for calculating effective Lotka-Volterra parameters
 
 """
 
-function Eff_LV_params(; name, p, sol)
+function Eff_LV_params(; name, p, sol, verbose = false )
     @assert all([:l, :ρ, :ω, :m, :M, :N, :u] .∈ Ref(collect(keys(p)))) "missing parameters"
 
     M = p[:M]
@@ -87,5 +87,9 @@ function Eff_LV_params(; name, p, sol)
         r[i] = O[i] - P[i] -m[i]
     end
 
-    return Dict(:ℵ => ℵ, :r => r, :N => N)
+    if verbose == false
+        return Dict(:ℵ => ℵ, :r => r, :N => N)
+    else
+        return Dict(:ℵ => ℵ, :r => r, :N => N, :∂R => ∂R, :A => A)
+    end
 end
