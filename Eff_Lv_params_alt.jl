@@ -1,11 +1,17 @@
 """
-Function for calculating effective Lotka-Volterra parameters
+Function for calculating effective Lotka-Volterra parameters.
+It is necessary to supply the parameters p and an ODEProbelm
+solution containing equilibrium values for the system in
+question. verbose = true allows the function to return the
+partial derivative vector as well as the A matrix.
 
 """
 
 function Eff_LV_params(; name, p, sol, verbose = false )
+## We verify that all necessary parameters have been supplied
     @assert all([:l, :ρ, :ω, :m, :M, :N, :u] .∈ Ref(collect(keys(p)))) "missing parameters"
 
+## Parameters are unpacked from dictionary and loaded into variables
     M = p[:M]
     N = p[:N]
     l = p[:l]
@@ -14,17 +20,20 @@ function Eff_LV_params(; name, p, sol, verbose = false )
     m = p[:m]
     u = p[:u]
 
+## We define a Kroenecker delta function
     δ(x, y) = ==(x, y)
 
-
+## Equilibrium values are loaded into their respective vectors
     Ceq = sol[1:N, length(sol)]
     Req = sol[(N+1):(N+M), length(sol)]
-    A = zeros(M, M)
-    ∂R = zeros(M, N)
-    ℵ = zeros(N, N)
-    λ = zeros(N, M)
-    O = zeros(N) # Dummy variable for first term of sum
-    P = zeros(N) # Dummy variable for interaction term
+
+    # Parameters are initialized
+    A = zeros(M, M) # A matrix
+    ∂R = zeros(M, N) # Partial derivative vector
+    ℵ = zeros(N, N) # Interaction matrix
+    λ = zeros(N, M) # Row sum of stoichiometric matrix
+    O = zeros(N) # Dummy variable for calculating r
+    P = zeros(N) # Dummy variable for calculating r
     r = zeros(N) # Effective growth rates
 
 ## Calculating the A matrix from parameters at equilibrium
@@ -68,7 +77,7 @@ function Eff_LV_params(; name, p, sol, verbose = false )
         end
     end
 
-## Calculating effective carrying capacities
+## Calculating components of the intrinsic growth rates
 
     for i in 1:N
         for α in 1:M
@@ -86,7 +95,7 @@ function Eff_LV_params(; name, p, sol, verbose = false )
     for i in 1:N
         r[i] = O[i] - P[i] -m[i]
     end
-
+## Check verbose value and return corresponding parameter dictionary
     if verbose == false
         return Dict(:ℵ => ℵ, :r => r, :N => N)
     else
