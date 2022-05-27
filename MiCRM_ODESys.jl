@@ -20,6 +20,7 @@ function MiCRM(; name, p)
 
     eqns = []
 
+
     for i in 1:N
         RHS = -C[i] * m[i]
         for α in 1:M
