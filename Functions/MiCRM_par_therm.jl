@@ -4,7 +4,7 @@ Parameters are constrained by thermal dissipation d.
 
 """
 
-function MiCRM_par_therm(; name, N, M, η = nothing, d = nothing)
+function MiCRM_par_therm(; name, N, M, η = nothing, d = nothing, μ = 0.5, θ = nothing)
     ## We initialize the parameters: uptake matrix, leakage tensor, inflow, and
     ## maitenance biomass
 
@@ -15,38 +15,49 @@ function MiCRM_par_therm(; name, N, M, η = nothing, d = nothing)
     m = zeros(N, 1)
 
     ## Define preliminary variables to build uptake matrix and populate uᵢα
-    θ = zeros(N, M)
     Ω = zeros(N, 1)
     T = zeros(N, 1)
     L = zeros(N, M)
 
-    d = rand(N, M)
+    if d == nothing
+        d = rand(N, M)
+    else
+        dNorm = Normal(d, d*0.1)
+        d = rand(dNorm, N, M)
+    end
 
-    η = rand(N, M)
-
+    if η == nothing
+        η = rand(N, M)
+    else
+        ηNorm = Normal(η, η*0.1)
+        η = rand(ηNorm, N, M)
+    end
 
     ## Construct uniform and beta distribution to draw parameters from
     dU = Uniform(0,1)
     dB = Beta(4, 3)
-    dN = Normal(0.5, 0.05)
+    dN = Normal(μ, 0.1*μ)
+    dΩ = Uniform(1, 10000)
 
 
     ## Sample concentration parameters for each consumer from uniform distribution
-    for i in 1:N
-        θ[i, :] = rand(dU, M)
+    if θ == nothing
+        θ = zeros(N, M)
+
+        for i in 1:N
+            θ[i, :] = rand(dU, M)
+        end
     end
 
     ## Sample specialisation parameter for each consumer
-    Ω = rand(dU, N)
+    Ω = rand(dΩ, N)
 
     ## Sample total uptake capacity per consumer
     T = rand(dB, N)
 
     ## Generate uptake matrix from a dirichlet distribution
     for i in 1:N
-        ϕ = zeros(M)
-        ϕ = [1- θ[i, j] for j in 1:M]
-        dD = Dirichlet(Ω[i]*ϕ[:])
+        dD = Dirichlet(Ω[i]*θ[i, :])
         u[i, :] = rand(dD)*T[i]
     end
 
@@ -55,7 +66,7 @@ function MiCRM_par_therm(; name, N, M, η = nothing, d = nothing)
 
     for i in 1:N
         for α in 1:M
-            L[i, α] = T[i]*(1-η[i, α])*(1-d[i, α])
+            L[i, α] = T[i]*(1-η[i, α]-d[i, α])
         end
     end
 
@@ -75,7 +86,7 @@ function MiCRM_par_therm(; name, N, M, η = nothing, d = nothing)
     ω = rand(M)*(1/(2*M))
 
     ## sample maitenance parameter from uniform distribution
-    m = [rand(dN) for i in 1:N]
+    m = [rand(dN)*T[i]^(2/3) for i in 1:N]
 
     p = Dict(:l => l, :ρ => ρ, :ω => ω, :m => m, :M => M, :N => N, :u => u)
 end

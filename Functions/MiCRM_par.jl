@@ -5,7 +5,7 @@ be implemented.
 
 """
 
-function MiCRM_par(; name, N, M)
+function MiCRM_par(; name, N, M, L, μ = 0.5, θ = nothing)
     ## We initialize the parameters: uptake matrix, leakage matrix, inflow, and
     ## maitenance biomass
 
@@ -16,46 +16,49 @@ function MiCRM_par(; name, N, M)
     m = zeros(N, 1)
 
     ## Define preliminary variables to build uptake matrix and populate uᵢα
-    θ = zeros(N, M)
     Ω = zeros(N, 1)
     T = zeros(N, 1)
-    L = 0.1
 
     ## Construct uniform and beta distribution to draw parameters from
-    dU = Uniform(0,1)
-    dB = Beta(10, 20)
+    dU = Uniform(0, 1)
+    dB = Beta(4, 3)
+    dN = Normal(μ, 0.1*μ)
 
     ## Sample concentration parameters for each consumer from uniform distribution
-    for i in 1:N
-        θ[i, :] = rand(dU, M)
+    if θ == nothing
+        θ = zeros(N, M)
+
+        for i in 1:N
+            θ[i, :] = rand(dU, M)
+        end
     end
 
     ## Sample specialisation parameter for each consumer
-    Ω = 100 * rand(dU, N)
+    Ω = fill(1, N)
 
     ## Sample total uptake capacity per consumer
-    T = rand(dB, N)
+    T = fill(1, N)
 
     ## Generate uptake matrix from a dirichlet distribution
-    for i in 1:N
-        dD = Dirichlet(Ω[i]*θ[i,:])
+    for i = 1:N
+        dD = Dirichlet(Ω[i] * θ[i, :])
         u[i, :] = rand(dD) * T[i]
     end
 
     ## Generate leakage tensor from dirichlet distribution
-    for i in 1:N
-        dD = Dirichlet(Ω[i]*θ[i,:])
-        for α in 1:M
+    for i = 1:N
+        dD = Dirichlet(Ω[i] * θ[i, :])
+        for α = 1:M
             l[i, α, :] = rand(dD) * L
         end
     end
 
     ## Sample inflow parameter from uniform distribution
-    ρ = rand(M)
-    ω = rand(M)*0.5
+    ρ = fill(0.2, M)
+    ω = zeros(M)
 
-    ## sample maitenance parameter from uniform distribution
-    m = rand(N)
+    ## sample maitenance parameter from normal distribution
+    m = rand(dN, N)
 
     p = Dict(:l => l, :ρ => ρ, :ω => ω, :m => m, :M => M, :N => N, :u => u)
 end
