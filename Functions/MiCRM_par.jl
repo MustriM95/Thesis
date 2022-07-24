@@ -5,7 +5,7 @@ be implemented.
 
 """
 
-function MiCRM_par(; name, N, M, L, μ = 0.5, θ = nothing)
+function MiCRM_par(; name, N, M, L, μ = 0.5, θ = nothing, Ω = nothing)
     ## We initialize the parameters: uptake matrix, leakage matrix, inflow, and
     ## maitenance biomass
 
@@ -16,7 +16,6 @@ function MiCRM_par(; name, N, M, L, μ = 0.5, θ = nothing)
     m = zeros(N, 1)
 
     ## Define preliminary variables to build uptake matrix and populate uᵢα
-    Ω = zeros(N, 1)
     T = zeros(N, 1)
 
     ## Construct uniform and beta distribution to draw parameters from
@@ -33,8 +32,11 @@ function MiCRM_par(; name, N, M, L, μ = 0.5, θ = nothing)
         end
     end
 
-    ## Sample specialisation parameter for each consumer
-    Ω = fill(1, N)
+    if Ω == nothing
+        ## Sample specialisation parameter for each consumer
+        Ω = fill(1.0, N)
+    end
+
 
     ## Sample total uptake capacity per consumer
     T = fill(1, N)
@@ -46,8 +48,9 @@ function MiCRM_par(; name, N, M, L, μ = 0.5, θ = nothing)
     end
 
     ## Generate leakage tensor from dirichlet distribution
+    ϕ = fill(1.0, M)
     for i = 1:N
-        dD = Dirichlet(Ω[i] * θ[i, :])
+        dD = Dirichlet(ϕ[:])
         for α = 1:M
             l[i, α, :] = rand(dD) * L
         end
@@ -58,7 +61,7 @@ function MiCRM_par(; name, N, M, L, μ = 0.5, θ = nothing)
     ω = zeros(M)
 
     ## sample maitenance parameter from normal distribution
-    m = rand(dN, N)
+    m = fill(0.2, N)
 
     p = Dict(:l => l, :ρ => ρ, :ω => ω, :m => m, :M => M, :N => N, :u => u)
 end

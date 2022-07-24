@@ -9,6 +9,9 @@ using Random
 using ForwardDiff
 using DiffEqCallbacks
 using DataFrames
+using CSV
+using BenchmarkTools
+
 
 ## We define the dimension of our system, number of consumers and number
 ## of resources
@@ -20,158 +23,60 @@ include("Eff_Lv_sys_alt.jl")
 include("MiCRM_jac.jl")
 include("Eff_Lv_jac.jl")
 include("MiCRM_par_therm.jl")
+include("MiC_test.jl")
 
 
 export MiCRM, MiCRM_par, Eff_Lv_params, Eff_Lv_sys, MiCRM_jac, Eff_Lv_Jac
-export MiCRM_par_therm
+export MiCRM_par_therm, MiC_test
 
-N = 5
-M = 5
+t_span = 10000.0
 
-θ = zeros(N, M)
+N = 6
+M = 6
 
-θ[1, :] = [1.0, 0.001, 0.001, 0.001, 0.001]
-θ[2, :] = [0.001, 1.0, 0.001, 0.001, 0.001]
-θ[3, :] = [0.001, 0.001, 1.0, 0.001, 0.001]
-θ[4, :] = [0.001, 0.001, 0.001, 1.0, 0.001]
-θ[5, :] = [0.001, 0.001, 0.001, 0.001, 1.0]
+θ = 1.0*I(N)
 
-NoiseD = Normal(0.5, 0.2)
-NoiseM = rand(NoiseD, N, M)
+Ω = fill(1.0, N)
 
-θ = θ + NoiseM
+L = 0.1
+μ = 0.1
+σ = 0.001
 
-L = 0.3
-μ = 0.2
+itr = 0
+results = nothing
+Ω_vec = [1.0, 10, 100, 1000]
+σ_vec = [0.001, 0.1, 0.2, 0.3, 0.4, 0.5]
+μ_vec = [0.001, 0.1, 0.2, 0.3, 0.4, 0.5]
 
-@named p = MiCRM_par(N = N, M = M, L=L, μ = μ, θ = θ)
-
-p[:u]
-
-mean(cor(p[:u]) - Matrix(1.0I, N, M))
-
-u_tr = zeros(N, M)
-
-for i in 1:N
-    for α in 1:M
-        if i != α
-            u_tr[i, α] = 0.0
-        else
-            u_tr[i, α] = p[:u][i, α]
+for μ in μ_vec
+    for σ in σ_vec
+        for Ω in Ω_vec
+            L = 0.0
+            while L < 0.9
+                Sim = MiC_test(μ=μ, σ=σ, L=L,  N=N, M=M, θ=θ, Ω = Ω, t_span=t_span)
+                if itr == 0
+                    results= N, M, L, μ, σ, Sim[:NO], Sim[:MSE], Sim[:Eq_MSE], Sim[:ℵ_m], Sim[:r_m],
+                     Sim[:eq_t], Sim[:domEig], Sim[:domEigLV], Sim[:C_sur], Sim[:trc_max]
+                else
+                    temp = N, M, L, μ, σ, Sim[:NO], Sim[:MSE], Sim[:Eq_MSE], Sim[:ℵ_m], Sim[:r_m],
+                     Sim[:eq_t], Sim[:domEig], Sim[:domEigLV], Sim[:C_sur], Sim[:trc_max]
+                    results = vcat(results, temp)
+                end
+                itr += 1
+                L += 0.1
+                println(itr)
+            end
         end
     end
 end
 
-off_diag_u = p[:u] - u_tr
-
-sqrt(M*var(off_diag_u))
-
-@named sys1 = MiCRM(p = p)
-
-u0 = fill(states(sys1)[1] => 0.0, (N+M))
-for i in 1:N
-    u0[i] = states(sys1)[i] => 0.1
-end
-
-for α in (N+1):(N+M)
-    u0[α] = states(sys1)[α] => 0.1
-end
+C_names = [:N, :M ,:Leakage, :Noise_m, :Noise_std, :NO, :MSE, :Eq_MSE, :I_m, :R_m,
+ :eq_t, :domEig, :domEigLV, :C_sur, :trc_max]
 
 
-prob = ODEProblem(sys1, u0, (0.0, 700.0), [], jac = true)
 
-sol =solve(prob,reltol=1e-8,abstol=1e-8, saveat=1)
+df = DataFrame(results)
+df = rename(df, C_names)
 
-plot(sol, vars = [1, 2, 3, 4, 5])
-
-@named Jac = MiCRM_jac(p=p, symbolic = false, sol=sol)
-
-@named LV1 = Eff_LV_params(p = p, sol = sol, verbose = true)
-
-LV1[:ℵ]
-LV1[:r]
-
-@named LVM = EFF_LV_sys(p_lv = LV1)
-
-u0 = fill(0.1, N)
-u0 = [states(LVM)[i] => u0[i] for i = eachindex(u0)]
-
-prob_LV = ODEProblem(LVM, u0, (0.0, 700.0), jac = true)
-
-sol_LV = solve(prob_LV, reltol=1e-8,abstol=1e-8, saveat=1)
-
-plot(sol_LV)
-
-C_eq = zeros(N)
-C_LV_eq = zeros(N)
-
-for i in 1:N
-    C_eq[i] = sol[i, 300]
-end
-
-for i in 1:N
-    C_LV_eq[i] = sol_LV[i, 300]
-end
-
-@named LV_Jac = Eff_Lv_Jac(p_lv = LV1, sol = C_eq)
-
-Eig = eigvals(Jac)
-
-EigLV = eigvals(LV_Jac)
-
-domEig = maximum(real(Eig))
-domEigLV = maximum(real(EigLV))
-
-diff_m_p = zeros(N)
-diff_m_p = [minimum(broadcast(abs, sol[i, :] - sol_LV[i, :])) for i in 1:N]
-
-null = fill(0.1, length(sol))
-diff_m_n = zeros(N)
-diff_m_n = [minimum(broadcast(abs, sol[i, :] - null)) for i in 1:N]
-
-logL_p = 0.0
-
-for j in 1:N
-    av_sum = 0.0
-    for i in 1:length(sol)
-        av_sum += abs(sol[j, i] - sol_LV[j, i])/(sol[j, i])
-    end
-    logL_p = av_sum/N
-end
-
-logL_null = 0.0
-
-for j in 1:N
-    av_sum = 0.0
-    for i in 1:length(sol)
-        av_sum += abs(sol[j, i] - 0.1)/(sol[j, i])
-    end
-    logL_null += av_sum/N
-end
-
-
-p_R2 = 1 - (log(logL_p)/log(logL_null))
-
-Eq_chi = 0.0
-
-for i in 1:N
-    Eq_chi += ((C_eq[i] - C_LV_eq[i])^2)
-end
-
-Eq_chi
-
-u_tr = zeros(N, M)
-
-for i in 1:N
-    for α in 1:M
-        if i != α
-            u_tr[i, α] = 0.0
-        else
-            u_tr[i, α] = p[:u][i, α]
-        end
-    end
-end
-
-off_diag_u = p[:u] - u_tr
-
-var(off_diag_u)
+CSV.write("6x6.csv", df)
+typeof(results)
