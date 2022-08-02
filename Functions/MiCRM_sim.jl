@@ -27,14 +27,8 @@ export MiCRM, MiCRM_par, Eff_Lv_params, Eff_Lv_sys, MiCRM_jac, Eff_Lv_Jac
 export MiCRM_par_therm
 
 
-M = p[:M]
-N = p[:N]
-
-p[:l][1, 1, :]
-p[:l][1, 2, :]
-
-p[:l][2, 1, :]
-p[:l][2, 2, :]
+M = 3
+N = 3
 
 
 noise = Normal(0.2, 0.01)
@@ -45,7 +39,26 @@ NoiseM = rand(noise, N, M)
 θ = θ + broadcast(abs, NoiseM)
 
 ##@named p = MiCRM_par_therm(N = N, M = M, d = 0.05, μ = 0.2, η = 0.25, θ = θ)
-@named p = MiCRM_par(N = N, M = M, L=0.2, μ = 0.2, θ = θ)
+@named p = MiCRM_par(N = N, M = M, L=0.5, μ = 0.2, θ = θ)
+
+eff_L = zeros(N, M)
+
+for j in 1:N
+    for i in 1:M
+        eff_L[j, :] += p[:u][j, i]*p[:l][j, i, :]
+    end
+end
+
+cfeed(x, y) = dot(x, y) / (norm(x))
+
+CO = 0.0
+for i in 1:N
+    for j in (i+1):N
+        CO += cfeed(p[:u][i, :], eff_L[j, :])*(2/(N*(N-1)))
+    end
+end
+
+CO
 
 @named sys1 = MiCRM(p = p)
 
