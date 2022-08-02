@@ -1,4 +1,4 @@
-cd("/home/pawarlab/Thesis")
+cd("C:\\Users\\micho\\github\\Thesis")
 
 using DifferentialEquations
 using LinearAlgebra
@@ -8,7 +8,7 @@ using Distributions
 using Random
 using ForwardDiff
 using DiffEqCallbacks
-using JLD, HDF5
+using StaticArrays
 
 
 ## We define the dimension of our system, number of consumers and number
@@ -27,14 +27,10 @@ export MiCRM, MiCRM_par, Eff_Lv_params, Eff_Lv_sys, MiCRM_jac, Eff_Lv_Jac
 export MiCRM_par_therm
 
 
-M = 3
-N = 3
-<<<<<<< HEAD
-=======
+M = 2
+N = 2
 
->>>>>>> 887abe50a26574c80bc02f622dc5a6dc10bc8e12
-
-noise = Normal(0.2, 0.01)
+noise = Normal(0.001, 0.01)
 NoiseM = rand(noise, N, M)
 
 θ = 1.0*I(N)
@@ -42,28 +38,11 @@ NoiseM = rand(noise, N, M)
 θ = θ + broadcast(abs, NoiseM)
 
 ##@named p = MiCRM_par_therm(N = N, M = M, d = 0.05, μ = 0.2, η = 0.25, θ = θ)
-@named p = MiCRM_par(N = N, M = M, L=0.5, μ = 0.2, θ = θ)
-
-eff_L = zeros(N, M)
-
-for j in 1:N
-    for i in 1:M
-        eff_L[j, :] += p[:u][j, i]*p[:l][j, i, :]
-    end
-end
-
-cfeed(x, y) = dot(x, y) / (norm(x))
-
-CO = 0.0
-for i in 1:N
-    for j in (i+1):N
-        CO += cfeed(p[:u][i, :], eff_L[j, :])*(2/(N*(N-1)))
-    end
-end
-
-CO
+@named p = MiCRM_par(N = N, M = M, L=0.7, μ = 0.2, θ = θ)
 
 @named sys1 = MiCRM(p = p)
+
+@named sys1 = update_parameters!(sys1, p_new = p)
 
 u0 = fill(states(sys1)[1] => 0.0, (N+M))
 for i in 1:N
@@ -74,13 +53,12 @@ for α in (N+1):(N+M)
     u0[α] = states(sys1)[α] => 0.1
 end
 
-prob = ODEProblem(sys1, u0, (0.0, 200.0), [])
+prob = ODEProblem(sys1, u0, (0.0, 1000.0), [])
 
-sol =solve(prob, TRBDF2(),reltol=1e-9, abstol=1e-9, saveat=1)
-m_p = plot(sol, vars=[1, 2, 3], xaxis = (font(10)), yaxis=(font(10)),
- lw = 2, title = "MiCRM", label = false)
+cb = AutoAbstol()
 
-savefig(m_p, "MiCRM_typ.png")
+sol =solve(prob, TRBDF2(),reltol=1e-9, abstol=1e-9, saveat=1, callback = cb)
+plot(sol)
 
 
 @named Jac = MiCRM_jac(p=p, symbolic = false, sol=sol)
@@ -112,19 +90,13 @@ LV1[:r]
 u0 = fill(0.1, N)
 u0 = [states(LVM)[i] => u0[i] for i = eachindex(u0)]
 
-prob_LV = ODEProblem(LVM, u0, (0.0, 200.0))
+prob_LV = ODEProblem(LVM, u0, (0.0, 500.0))
 
-sol_LV = solve(prob_LV, TRBDF2(), reltol=1e-9, abstol=1e-9, saveat=1)
+sol_LV = solve(prob_LV, TRBDF2(), reltol=1e-9, abstol=1e-9, saveat=1, callback = cb)
 
-l_p = plot(sol_LV, xaxis = (font(10)), yaxis=(font(10)),
- lw=2, title="LVM")
-savefig(l_p, "LVM_typ.png")
-
-com_plot = plot(m_p, l_p, layout=2)
-savefig(com_plot, "com_plot_s.png")
+plot(sol_LV)
 
 @named LV_Jac = Eff_Lv_Jac(p_lv = LV1, sol = sol_LV)
-
 
 ct_LV = [1/abs(LV_Jac[i, i]) for i in 1:(N)]
 
@@ -141,9 +113,9 @@ Ceq_LV = sol_LV[1:N, length(sol_LV)]
 Ceq - Ceq_LV
 
 ## Saving parameter dictionary
-
+using JLD, HDF5
 
 save("MCRM_fail11.jld", "data", p)
 
 
-p = load("Data/MCRM_fail10.jld", "data")
+p = load("MCRM_fail5.jld", "data")
