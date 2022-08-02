@@ -1,4 +1,4 @@
-cd("C:\\Users\\micho\\github\\Thesis")
+cd("/home/pawarlab/Thesis")
 
 using DifferentialEquations
 using LinearAlgebra
@@ -27,15 +27,8 @@ export MiCRM, MiCRM_par, Eff_Lv_params, Eff_Lv_sys, MiCRM_jac, Eff_Lv_Jac
 export MiCRM_par_therm
 
 
-M = p[:M]
-N = p[:N]
-
-p[:l][1, 1, :]
-p[:l][1, 2, :]
-
-p[:l][2, 1, :]
-p[:l][2, 2, :]
-
+M = 3
+N = 3
 
 noise = Normal(0.2, 0.01)
 NoiseM = rand(noise, N, M)
@@ -63,6 +56,7 @@ prob = ODEProblem(sys1, u0, (0.0, 200.0), [])
 sol =solve(prob, TRBDF2(),reltol=1e-9, abstol=1e-9, saveat=1)
 m_p = plot(sol, vars=[1, 2, 3], xaxis = (font(10)), yaxis=(font(10)),
  lw = 2, title = "MiCRM", label = false)
+
 savefig(m_p, "MiCRM_typ.png")
 
 
