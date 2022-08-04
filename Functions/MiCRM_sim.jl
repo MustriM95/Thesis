@@ -29,10 +29,7 @@ export MiCRM_par_therm
 
 M = 3
 N = 3
-<<<<<<< HEAD
-=======
 
->>>>>>> 887abe50a26574c80bc02f622dc5a6dc10bc8e12
 
 noise = Normal(0.2, 0.01)
 NoiseM = rand(noise, N, M)

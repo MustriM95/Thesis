@@ -1,4 +1,4 @@
-cd("C:\\Users\\micho\\github\\Thesis\\HPC")
+cd("/home/pawarlab/Thesis/HPC")
 using Distributed
 
 @everywhere using DifferentialEquations
@@ -44,10 +44,9 @@ M = 3
 
 μ = 0.0
 σ = 0.0
-Shared
 @everywhere itr = SharedVector{Int64}(1)
 itr[1] = 1
-results = SharedArray{Float64}(15, 1440)
+results = SharedArray{Float64}(16, 1440)
 Ω_vec = [1.0, 10, 100, 1000]
 σ_vec = [0.001, 0.1, 0.2, 0.3, 0.4, 0.5]
 μ_vec = [0.001, 0.1, 0.2, 0.3, 0.4, 0.5]
@@ -59,8 +58,9 @@ L_vec = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
         for Ω in Ω_vec
             for μ in μ_vec
                 Sim = MiC_test(μ=μ, σ=σ, L=L,  N=N, M=M, θ=θ, Ω = Ω, t_span=tspan)
-                results[:, itr] = [convert(Float64, N), convert(Float64, M), L, μ, σ, Sim[:NO], Sim[:MSE], Sim[:Eq_MSE], Sim[:ℵ_m], Sim[:r_m],
-                 convert(Float64, Sim[:eq_t]), Sim[:domEig], Sim[:domEigLV], Sim[:C_sur], Sim[:trc_max]]
+                results[:, itr] = [convert(Float64, N), convert(Float64, M), L, μ, σ, Sim[:NO], Sim[:CO],
+                 Sim[:MSE], Sim[:Eq_MSE], Sim[:ℵ_m], Sim[:r_m],convert(Float64, Sim[:eq_t]),
+                 Sim[:domEig], Sim[:domEigLV], Sim[:C_sur], Sim[:trc_max]]
                 print(itr)
                 itr[1] += 1
             end
@@ -69,7 +69,7 @@ L_vec = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 end
 
 
-C_names = [:N, :M ,:Leakage, :Noise_m, :Noise_std, :NO, :MSE, :Eq_MSE, :I_m, :R_m,
+C_names = [:N, :M ,:Leakage, :Noise_m, :Noise_std, :NO, :CO, :MSE, :Eq_MSE, :I_m, :R_m,
  :eq_t, :domEig, :domEigLV, :C_sur, :trc_max]
 
 res = convert(Array, results)

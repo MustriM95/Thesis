@@ -1,4 +1,4 @@
-cd("C:\\Users\\micho\\github\\Thesis\\HPC")
+cd("/home/pawarlab/Thesis/HPC")
 
 using DifferentialEquations
 using LinearAlgebra
@@ -53,10 +53,10 @@ for μ in μ_vec
             while L < 0.9
                 Sim = MiC_test(μ=μ, σ=σ, L=L,  N=N, M=M, θ=θ, Ω = Ω, t_span=t_span)
                 if itr == 0
-                    results= N, M, L, μ, σ, Sim[:NO], Sim[:MSE], Sim[:Eq_MSE], Sim[:ℵ_m], Sim[:r_m],
+                    results= N, M, L, μ, σ, Sim[:NO], Sim[:CO], Sim[:MSE], Sim[:Eq_MSE], Sim[:ℵ_m], Sim[:r_m],
                      Sim[:eq_t], Sim[:domEig], Sim[:domEigLV], Sim[:C_sur], Sim[:trc_max]
                 else
-                    temp = N, M, L, μ, σ, Sim[:NO], Sim[:MSE], Sim[:Eq_MSE], Sim[:ℵ_m], Sim[:r_m],
+                    temp = N, M, L, μ, σ, Sim[:NO], Sim[:CO],  Sim[:MSE], Sim[:Eq_MSE], Sim[:ℵ_m], Sim[:r_m],
                      Sim[:eq_t], Sim[:domEig], Sim[:domEigLV], Sim[:C_sur], Sim[:trc_max]
                     results = vcat(results, temp)
                 end
@@ -68,7 +68,7 @@ for μ in μ_vec
     end
 end
 
-C_names = [:N, :M ,:Leakage, :Noise_m, :Noise_std, :NO, :MSE, :Eq_MSE, :I_m, :R_m,
+C_names = [:N, :M ,:Leakage, :Noise_m, :Noise_std, :NO, :CO, :MSE, :Eq_MSE, :I_m, :R_m,
  :eq_t, :domEig, :domEigLV, :C_sur, :trc_max]
 
 df = DataFrame(results)

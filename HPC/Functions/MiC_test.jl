@@ -48,6 +48,23 @@ function MiC_test(; μ, σ, L, N, M, θ = nothing, Ω = nothing, t_span = nothin
             NO += cossim(p[:u][i, :], p[:u][j, :])*(2/(N*(N-1)))
         end
     end
+## We calculate the cross feeding/cooperation index
+        eff_L = zeros(N, M)
+
+        for j in 1:N
+            for i in 1:M
+                eff_L[j, :] += p[:u][j, i]*p[:l][j, i, :]
+            end
+        end
+
+        cfeed(x, y) = dot(x, y) / (norm(x))
+
+        CO = 0.0
+        for i in 1:N
+            for j in (i+1):N
+                CO += cfeed(p[:u][i, :], eff_L[j, :])*(2/(N*(N-1)))
+            end
+        end
 
 ## Building the ODEs and initializing
     @named sys1 = MiCRM(p = p)
@@ -157,7 +174,7 @@ function MiC_test(; μ, σ, L, N, M, θ = nothing, Ω = nothing, t_span = nothin
     end
 
 
-    Sim_res = Dict(:NO => NO, :ℵ_m => ℵ_m, :r_m => r_m, :eq_t => eq_t,
+    Sim_res = Dict(:NO => NO, :CO => CO, :ℵ_m => ℵ_m, :r_m => r_m, :eq_t => eq_t,
      :domEig => domEig, :domEigLV => domEigLV, :MSE => MSE, :Eq_MSE => Eq_MSE,
      :C_sur => C_sur, :trc_max => trc_max)
  end
