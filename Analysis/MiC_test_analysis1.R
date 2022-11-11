@@ -1,24 +1,22 @@
 rm(list = ls())
 
-setwd("C:/Users/micho/github/Thesis/HPC")
+setwd("~/github*Thesis")
 
 library(dplyr)
 library(ggplot2)
 library(tidyr)
 
 
-df2 = read.csv("parallel_8x8.csv")
-df3 = read.csv("parallel_9x9.csv")
-df4 = read.csv("parallel_10x10.csv")
-df5 = read.csv("parallel_11x11.csv")
-df6 = read.csv("parallel_12x12.csv")
-## df7 = read.csv("7x7.csv")
+df2 = read.csv("2x2_opt_v2.csv")
+df3 = read.csv("3x3_opt_v2.csv")
+df4 = read.csv("4x4_opt_v2.csv")
+df5 = read.csv("5x5_opt_v2.csv")
 
-df = rbind(df2, df3, df4, df5, df6)
+df = rbind(df2, df3, df4, df5)
 
-hist(log(df$MSE))
+hist(df$SMAPE)
 
-hist(log(df$Eq_MSE))
+hist(df$Eq_SMAPE)
 
 hist(df$NO)
 
@@ -28,8 +26,8 @@ boxplot(log(df$trc_max))
 
 head(df)
 
-Q <- quantile(log(df$MSE), probs=c(.25, .75), na.rm = FALSE)
-iqr <- IQR(log(df$MSE))
+Q <- quantile(log(df$SMAPE), probs=c(.25, .75), na.rm = FALSE)
+iqr <- IQR(log(df$SMAPE))
 
 df_NOut <- subset(df, log(df$MSE) > (Q[1] - 1.5*iqr) & log(df$MSE) < (Q[2]+1.5*iqr))
 

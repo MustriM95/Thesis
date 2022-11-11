@@ -1,4 +1,4 @@
-cd("C:\\Users\\micho\\github\\Thesis")
+cd("/home/michael/github*Thesis")
 
 using DifferentialEquations
 using LinearAlgebra
@@ -66,7 +66,7 @@ end
 ## of resources
 
 include("micrm_params.jl")
-include("dx.jl")
+include("dx_v2.jl")
 include("Eff_LV_p_opt.jl")
 include("LV_dx.jl")
 include("MiCRM_jac_opt.jl")
@@ -75,8 +75,8 @@ include("MiCRM_test_opt_v2.jl")
 
 t_span = 100000.0
 
-N = 3
-M = 3
+N = 4
+M = 4
 
 θ = zeros(N, M)
 
@@ -85,8 +85,8 @@ M = 3
 itr = 0
 results = nothing
 Ω_vec = [1.0, 10, 100, 1000]
-σ_vec = [0.001, 0.1, 0.2, 0.3, 0.4, 0.5]
-μ_vec = [0.001, 0.1, 0.2, 0.3, 0.4, 0.5]
+σ_vec = [0.1, 0.15, 0.2, 0.3, 0.4, 0.5]
+μ_vec = [0.1, 0.15, 0.2, 0.3, 0.4, 0.5]
 
 for μ in μ_vec
     for σ in σ_vec
@@ -118,5 +118,4 @@ C_names = [:N, :M ,:Leakage, :Noise_m, :Noise_std, :NO, :CO, :SMAPE, :Eq_SMAPE, 
 df = DataFrame(results)
 df = rename(df, C_names)
 
-CSV.write("3x3_opt_v2.csv", df)
-typeof(results)
+CSV.write("4x4_opt_v2.csv", df)

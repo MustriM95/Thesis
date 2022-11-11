@@ -8,8 +8,8 @@ def_u(N, M, kw) = copy(rand(Distributions.Dirichlet(M, 1.0), N)')
 function def_l(N, M, kw)
     l = zeros(N, M, M)
     ϕ = fill(1.0, M)
+    dD = Dirichlet(ϕ[:])
     for i = 1:N
-        dD = Dirichlet(ϕ[:])
         for α = 1:M
             l[i, α, :] = rand(dD) * kw[:L]
         end

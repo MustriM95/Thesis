@@ -147,8 +147,8 @@ function MiC_test(; μ, σ, L, N, M, θ = nothing, Ω = nothing, t_span = nothin
 
     EigLV = eigvals(LV_Jac)
 
-    domEig = maximum(real(Eig))
-    domEigLV = maximum(real(EigLV))
+    domEig = Eig[maximum((real(Eig[i]), i) for i in 1:(N+M))[2]]
+    domEigLV = EigLV[maximum((real(EigLV[i]), i) for i in 1:N)[2]]
 
     SMAPE = 0.0
     for i in 1:N
@@ -161,9 +161,7 @@ function MiC_test(; μ, σ, L, N, M, θ = nothing, Ω = nothing, t_span = nothin
     Eq_SMAPE = 0.0
 
     for i in 1:N
-        for t in 1:Int(eq_t)
-            Eq_SMAPE += log(abs(C_LV_eq[i]/C_eq[i]))/N
-        end
+        Eq_SMAPE += log(abs(C_LV_eq[i]/C_eq[i]))/N
     end
 
     C_sur = 0.0
