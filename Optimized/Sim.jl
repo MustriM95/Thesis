@@ -8,13 +8,14 @@ using Sundials
 using BenchmarkTools
 
 include("micrm_params.jl")
-include("dx.jl")
+include("dx_v2.jl")
 include("Eff_LV_p_opt.jl")
 include("LV_dx.jl")
 include("MiCRM_jac_opt.jl")
 include("Eff_LV_jac_opt.jl")
 include("MiCRM_test_opt.jl")
 include("eq_t_cal.jl")
+include("C:\\Users\\micho\\github\\Thesis\\Functions\\g_react.jl")
 
 function F_m(N, M, kw)
     m = fill(0.2, N)
@@ -80,7 +81,7 @@ dU = Uniform(0, 1)
 
 Ω = fill(1.0, N)
 
-p = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, L=0.4, θ=θ, Ω = Ω)
+p = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, L=0.7, θ=θ, Ω = Ω)
 
 x0 = fill(0.0, (N+M))
 for i in 1:N
@@ -91,7 +92,7 @@ for α in (N+1):(N+M)
     x0[α] = 0.1
 end
 
-tspan = (0.0, 15000.0)
+tspan = (0.0, 1500.0)
 
 ## include("dx.jl")
 
@@ -99,14 +100,11 @@ prob = ODEProblem(dxx!, x0, tspan, p)
 
 sol =solve(prob, CVODE_BDF(), saveat = 1)
 
-plot(sol, vars=[1, 2, 3])
-plot(sol, vars=[4, 5, 6])
-
+plot(sol, idxs=[1, 2, 3])
+plot(sol, idxs=[4, 5, 6])
 
 jac = MiCRM_jac(p=p, sol=sol)
-EV = append!(EV, eigvals(jac))
-scatter(EV)
-
+g_react(J=jac)
 #######################################################################################
 
 p_lv = Eff_LV_params(p=p, sol=sol)
@@ -123,6 +121,9 @@ sol_LV = solve(LV_prob, Tsit5(), reltol=1e-8, abstol=1e-8, saveat = 1)
 plot(sol_LV)
 
 LV_jac = Eff_Lv_Jac(p_lv=p_lv, sol=sol)
+
+g_react(J=LV_jac)
+
 
 eigen(LV_jac)
 

@@ -1,4 +1,4 @@
-cd("/home/michael/github*Thesis")
+cd("C:\\Users\\micho\\github\\Thesis")
 
 using DifferentialEquations
 using LinearAlgebra
@@ -72,6 +72,7 @@ include("LV_dx.jl")
 include("MiCRM_jac_opt.jl")
 include("Eff_LV_jac_opt.jl")
 include("MiCRM_test_opt_v2.jl")
+include("C:\\Users\\micho\\github\\Thesis\\Functions\\g_react.jl")
 
 t_span = 100000.0
 
@@ -95,11 +96,11 @@ for μ in μ_vec
             while L < 0.9
                 Sim = MiC_test(μ=μ, σ=σ, L=L,  N=N, M=M, Ω = Ω, t_span=t_span)
                 if itr == 0
-                    results= N, M, L, μ, σ, Sim[:NO], Sim[:CO], Sim[:SMAPE], Sim[:Eq_SMAPE], Sim[:ℵ_m], Sim[:r_m],
-                     Sim[:eq_t], Sim[:domEig], Sim[:domEigLV], Sim[:C_sur], Sim[:trc_max]
+                    results= N, M, L, μ, σ, Sim[:NO], Sim[:CO], Sim[:SMAPE], Sim[:Eq_SMAPE],
+                     Sim[:eq_t], Sim[:domEig], Sim[:domEigLV], Sim[:C_sur], Sim[:trc_max], Sim[:gR], Sim[:gR_LV]
                 else
-                    temp = N, M, L, μ, σ, Sim[:NO], Sim[:CO],  Sim[:SMAPE], Sim[:Eq_SMAPE], Sim[:ℵ_m], Sim[:r_m],
-                     Sim[:eq_t], Sim[:domEig], Sim[:domEigLV], Sim[:C_sur], Sim[:trc_max]
+                    temp = N, M, L, μ, σ, Sim[:NO], Sim[:CO],  Sim[:SMAPE], Sim[:Eq_SMAPE],
+                     Sim[:eq_t], Sim[:domEig], Sim[:domEigLV], Sim[:C_sur], Sim[:trc_max], Sim[:gR], Sim[:gR_LV]
                     results = vcat(results, temp)
                 end
                 itr += 1
@@ -110,12 +111,13 @@ for μ in μ_vec
     end
 end
 
-C_names = [:N, :M ,:Leakage, :Noise_m, :Noise_std, :NO, :CO, :SMAPE, :Eq_SMAPE, :I_m, :R_m,
- :eq_t, :domEig, :domEigLV, :C_sur, :trc_max]
+C_names = [:N, :M ,:Leakage, :Noise_m, :Noise_std, :NO, :CO, :SMAPE, :Eq_SMAPE,
+ :eq_t, :domEig, :domEigLV, :C_sur, :trc_max, :gR, :gR_LV]
 
 
 
 df = DataFrame(results)
 df = rename(df, C_names)
 
-CSV.write("4x4_opt_v2.csv", df)
+CSV.write("4x4_gR.csv", df)
+writedlm("4X4_gR.csv", eachrow(df))
