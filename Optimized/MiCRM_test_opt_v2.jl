@@ -4,12 +4,12 @@ function MiC_test(; μ, σ, L, N, M, θ = nothing, Ω = nothing, t_span = nothin
     NoiseM = rand(NoiseD, N, M)
     dU = Uniform(0, 1)
 
-    if t_span == nothing
+    if ==(t_span, nothing) 
         t_span = 1000.0
     end
 
     ## Sample concentration parameters for each consumer from uniform distribution
-    if θ == nothing
+    if ==(θ, nothing)
         θ = zeros(N, M)
 
         for i in 1:N
@@ -17,7 +17,7 @@ function MiC_test(; μ, σ, L, N, M, θ = nothing, Ω = nothing, t_span = nothin
         end
     end
 
-    if Ω == nothing
+    if ==(Ω,nothing) 
         ## Sample specialisation parameter for each consumer
         Ω = fill(1.0, N)
     end
@@ -84,6 +84,8 @@ function MiC_test(; μ, σ, L, N, M, θ = nothing, Ω = nothing, t_span = nothin
 
     Jac = MiCRM_jac(p=p, sol=sol)
 
+    gR = g_react(J=Jac)
+
     tc = zeros(N)
     tR = zeros(M)
 
@@ -101,9 +103,6 @@ function MiC_test(; μ, σ, L, N, M, θ = nothing, Ω = nothing, t_span = nothin
 
 
     LV1 = Eff_LV_params(p=p, sol=sol)
-
-    ℵ_m = mean(LV1.ℵ)
-    r_m = mean(LV1.r)
 
     Ci = fill(0.0, N)
     for i in 1:N
@@ -147,6 +146,8 @@ function MiC_test(; μ, σ, L, N, M, θ = nothing, Ω = nothing, t_span = nothin
 
     EigLV = eigvals(LV_Jac)
 
+    gR_LV = g_react(J=LV_Jac)
+
     domEig = Eig[maximum((real(Eig[i]), i) for i in 1:(N+M))[2]]
     domEigLV = EigLV[maximum((real(EigLV[i]), i) for i in 1:N)[2]]
 
@@ -172,7 +173,7 @@ function MiC_test(; μ, σ, L, N, M, θ = nothing, Ω = nothing, t_span = nothin
     end
 
 
-    Sim_res = Dict(:NO => NO, :CO => CO, :ℵ_m => ℵ_m, :r_m => r_m, :eq_t => eq_t,
+    Sim_res = Dict(:NO => NO, :CO => CO, :eq_t => eq_t,
      :domEig => domEig, :domEigLV => domEigLV, :SMAPE => SMAPE, :Eq_SMAPE => Eq_SMAPE,
-     :C_sur => C_sur, :trc_max => trc_max)
+     :C_sur => C_sur, :trc_max => trc_max, :gR => gR, :gR_LV =>gR_LV)
  end
