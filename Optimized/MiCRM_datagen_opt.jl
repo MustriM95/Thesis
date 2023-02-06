@@ -75,8 +75,8 @@ include("MiCRM_test_opt_v2.jl")
 
 t_span = 100000.0
 
-N = 4
-M = 4
+N = 14
+M = 14
 
 θ = zeros(N, M)
 
@@ -118,4 +118,4 @@ C_names = [:N, :M ,:Leakage, :Noise_m, :Noise_std, :NO, :CO, :SMAPE, :Eq_SMAPE, 
 df = DataFrame(results)
 df = rename(df, C_names)
 
-CSV.write("4x4_opt_v2.csv", df)
+CSV.write("./Data/14x14_opt_v2.csv", df)

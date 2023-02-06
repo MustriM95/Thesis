@@ -1,4 +1,4 @@
-cd("C:\\Users\\micho\\github\\Thesis")
+cd("/home/michael/github*Thesis")
 
 using Distributions
 using LinearAlgebra
@@ -15,6 +15,7 @@ include("MiCRM_jac_opt.jl")
 include("Eff_LV_jac_opt.jl")
 include("MiCRM_test_opt.jl")
 include("eq_t_cal.jl")
+
 
 function F_m(N, M, kw)
     m = fill(0.2, N)
@@ -67,6 +68,8 @@ function F_u(N, M, kw)
 
 end
 
+EV = nothing
+
 N=3
 M=3
 
@@ -80,31 +83,34 @@ dU = Uniform(0, 1)
 
 Ω = fill(1.0, N)
 
-p = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, L=0.4, θ=θ, Ω = Ω)
+EV = nothing
 
-x0 = fill(0.0, (N+M))
-for i in 1:N
-    x0[i] = 0.1
+for i in 1:1000
+
+    p = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, L=0.9, θ=θ, Ω = Ω)
+
+    x0 = fill(0.0, (N+M))
+    for i in 1:N
+        x0[i] = 0.1
+    end
+
+    for α in (N+1):(N+M)
+        x0[α] = 0.1
+    end
+
+    tspan = (0.0, 15000.0)
+
+    prob = ODEProblem(dxx!, x0, tspan, p)
+
+    sol =solve(prob, CVODE_BDF(), saveat = 1)
+
+    jac = MiCRM_jac(p=p, sol=sol)
+    if ==(EV, nothing)
+        EV = complex(eigvals(jac))
+    else
+        EV = append!(EV, eigvals(jac))
+    end
 end
-
-for α in (N+1):(N+M)
-    x0[α] = 0.1
-end
-
-tspan = (0.0, 15000.0)
-
-## include("dx.jl")
-
-prob = ODEProblem(dxx!, x0, tspan, p)
-
-sol =solve(prob, CVODE_BDF(), saveat = 1)
-
-plot(sol, vars=[1, 2, 3])
-plot(sol, vars=[4, 5, 6])
-
-
-jac = MiCRM_jac(p=p, sol=sol)
-EV = append!(EV, eigvals(jac))
 scatter(EV)
 
 #######################################################################################
@@ -155,3 +161,24 @@ for i in 1:N
 end
 
 SMAPE
+
+p_therm = MiCRM_par_therm(N, M)
+x0 = fill(0.0, (N+M))
+for i in 1:N
+    x0[i] = 0.1
+end
+
+for α in (N+1):(N+M)
+    x0[α] = 0.1
+end
+
+tspan = (0.0, 100.0)
+
+## include("dx.jl")
+
+prob = ODEProblem(dx_therm!, x0, tspan, p_therm)
+
+sol =solve(prob, CVODE_BDF(), saveat = 1)
+
+plot(sol, idxs=[1, 2, 3])
+plot(sol, idxs=[4, 5, 6])
