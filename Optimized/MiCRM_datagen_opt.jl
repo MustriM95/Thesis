@@ -76,8 +76,8 @@ include("C:\\Users\\micho\\github\\Thesis\\Functions\\g_react.jl")
 
 t_span = 100000.0
 
-N = 4
-M = 4
+N = 14
+M = 14
 
 θ = zeros(N, M)
 
