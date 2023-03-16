@@ -1,16 +1,16 @@
 rm(list = ls())
 
 setwd("~/github*Thesis")
+setwd("C:/Users/micho/github/Thesis")
 
 library(dplyr)
 library(ggplot2)
 library(tidyr)
 
 
-df2 = read.csv("2x2_opt_v2.csv")
-df3 = read.csv("3x3_opt_v2.csv")
-df4 = read.csv("4x4_opt_v2.csv")
-df5 = read.csv("5x5_opt_v2.csv")
+
+df3 = read.csv("3x3_newTest.csv")
+
 
 df = rbind(df2, df3, df4, df5)
 
@@ -26,13 +26,13 @@ boxplot(log(df$trc_max))
 
 head(df)
 
-Q <- quantile(log(df$SMAPE), probs=c(.25, .75), na.rm = FALSE)
-iqr <- IQR(log(df$SMAPE))
+Q <- quantile(df$SMAPE, probs=c(.25, .75), na.rm = FALSE)
+iqr <- IQR(df$SMAPE)
 
-df_NOut <- subset(df, log(df$MSE) > (Q[1] - 1.5*iqr) & log(df$MSE) < (Q[2]+1.5*iqr))
+df_NOut <- subset(df, df$SMAPE > (Q[1] - 1.5*iqr) & df$SMAPE < (Q[2]+1.5*iqr))
 
 
-ggplot(data=df_NOut, aes(y=log(MSE), x = NO)) + geom_point(aes(color = factor(Group_L))) + 
+ggplot(data=df_NOut, aes(y=df$SMAPE, x = NO)) + geom_point(aes(color = factor(Group_L))) + 
   labs(title = "Mean Squared Error vs. Niche Overlap", color ="Leakage") + theme(text = element_text(size = 18))
 
 ggplot(data=df_NOut, aes(y=log(Eq_MSE), x = NO)) + geom_point(aes(color = factor(Group_L))) + 

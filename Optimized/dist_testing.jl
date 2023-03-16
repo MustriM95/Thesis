@@ -19,6 +19,20 @@ function NiOv(; p)
     return NO
 end
 
+function NiVar(; NO, p)
+    cossim(x, y) = dot(x, y) / (norm(x)*norm(y))
+
+    NV = 0.0
+    for i in 1:N
+        for j in (i+1):N
+            NV += (NO - cossim(p.u[i, :], p.u[j, :])*(2/(N*(N-1))))^2
+        end
+    end
+
+    return NV
+end
+
+
 function CoOp(; p)
     eff_L = zeros(N, M)
 
@@ -28,16 +42,37 @@ function CoOp(; p)
         end
     end
 
-    cfeed(x, y) = dot(x, y) / (norm(x))
+    cossim(x, y) = dot(x, y) / (norm(x)*norm(y))
 
     CO = 0.0
     for i in 1:N
         for j in (i+1):N
-            CO += cfeed(p.u[i, :], eff_L[j, :])*(2/(N*(N-1)))
+            CO += cossim(p.u[i, :], eff_L[j, :])*(2/(N*(N-1)))
         end
     end
 
-    return CO/p.L
+    return CO
+end
+
+function CoVar(; CO, p)
+    eff_L = zeros(N, M)
+
+    for j in 1:N
+        for i in 1:M
+            eff_L[j, :] += p.u[j, i]*p.l[j, i, :]
+        end
+    end
+
+    cossim(x, y) = dot(x, y) / (norm(x)*norm(y))
+
+    CV = 0.0
+    for i in 1:N
+        for j in (i+1):N
+            CV += (CO - cossim(p.u[i, :], eff_L[j, :])*(2/(N*(N-1))))^2
+        end
+    end
+
+    return CV
 end
 
 ############################################################
@@ -62,39 +97,27 @@ function F_l(N, M, kw)
         for i in 1:N
             θ_uni += θ[i, :]/N
         end
-    ortho = nullspace(θ_uni')
+    θ_uni
+    min_index = 1
+        
+    for i in 2:N
+        temp = θ_uni[1]
+        if θ_uni[i] < temp
+            min_index = i
+        end
+    end
+        
+    ortho = zeros(N)
+    ortho[min_index] += θ_uni[min_index]
 
-    for j in 1:(N-1)
-        for i in 1:M
-            if ortho[i, j] < 0.0
-                ortho[i, j] = 0.0
-            end
-        end
-    end
-    
-    null_ind = 1
-    min = 0.0
-    for i in 1:(N-1)
-        dist = dot(ortho[:, i], θ_uni)
-        if ==(i, 1)
-           min = dist
-        else 
-            if dist < min
-                min = dist
-                null_ind = i
-            end
-        end
-    end
-    
-    null_vec = ortho[:, null_ind]
-    
-    null_vec = null_vec/norm(null_vec)
-    
+    u_null = ones(M)
+
     ϕ = fill(0.0, M)
-    ϕ = θ_uni*sim + null_vec
+    #ϕ = θ_uni*sim + (1/sim)*(u_null - θ_uni/norm(θ_uni))
+    ϕ = θ_uni*sim + (1/sim)*ortho
     ϕ = ϕ/norm(ϕ)
 
-    dD = Dirichlet(100*ϕ[:])
+    dD = Dirichlet(10*ϕ[:])
 
     for i = 1:N
         for α = 1:M
@@ -170,42 +193,10 @@ dU = Uniform(0, 1)
 
 Ω = fill(100.0, N)
 
-p = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, f_l=F_l, L=0.1, θ=θ, Ω = Ω, sim = 100.0)
+p = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, f_l=F_l, L=0.5, θ=θ, Ω = Ω, sim = 0.2)
 
-NiOv(p=p)
-CoOp(p=p)
+NO = NiOv(p=p)
+CO = CoOp(p=p)
 
-θ_uni = zeros(N)
-for i in 1:N
-    θ_uni += θ[i, :]/N
-end
-θ_uni = θ_uni/norm(θ_uni)
-ortho =nullspace(θ_uni')
-
-for j in 1:(N-1)
-    for i in 1:M
-        if ortho[i, j] < 0.0
-            ortho[i, j] = 0.0
-        end
-    end
-end
-
-ortho = ortho ./ norm.(eachcol(ortho))'
-
-ortho
-
-null_vec = null_vec/norm(null_vec)
-
-dist_sum = norm(ortho[:, 1] - θ_uni) + norm(ortho[:, 2] - θ_uni)
-norm(ortho[:, 1] - θ_uni)/dist_sum
-norm(ortho[:, 2] - θ_uni)/dist_sum
-
-ϕ = fill(0.0, M)
-ϕ = θ_uni*0.00001 + (norm(ortho[:, 1])/dist_sum)*ortho[:, 1] + (norm(ortho[:, 2])/dist_sum)*ortho[:, 2]
-ϕ = θ_uni*0.00001 + ortho[:, 1] 
-ϕ = ϕ/norm(ϕ)
-
-dot(ϕ,θ_uni)
-
-ϕ
-θ_uni
+NV = NiVar(NO=NO, p=p)
+CV = CoVar(CO=CO, p=p)

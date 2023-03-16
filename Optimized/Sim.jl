@@ -1,4 +1,5 @@
 cd("/home/michael/github*Thesis")
+cd("C:\\Users\\micho\\github\\Thesis")
 
 using Distributions
 using LinearAlgebra
@@ -69,6 +70,53 @@ function F_u(N, M, kw)
 
 end
 
+function F_l(N, M, kw)
+    l = zeros(N, M, M)
+
+    if !haskey(kw, :sim)
+        sim = 1.0
+    else
+        sim = kw[:sim]
+    end
+
+    if !haskey(kw, :θ)
+        dU = Uniform(0, 1)
+        ϕ = rand(dU, M)
+    else
+        θ = kw[:θ]
+    end
+
+    θ_uni = zeros(N)
+        for i in 1:N
+            θ_uni += θ[i, :]/N
+        end
+    θ_uni
+    min_index = 1
+        
+    for i in 2:N
+        temp = θ_uni[1]
+        if θ_uni[i] < temp
+            min_index = i
+        end
+    end
+        
+    ortho = zeros(N)
+    ortho[min_index] += θ_uni[min_index]
+
+    ϕ = fill(0.0, M)
+    ϕ = θ_uni*sim + (1/sim)*ortho
+    ϕ = ϕ/norm(ϕ)
+
+    dD = Dirichlet(100*ϕ[:])
+
+    for i = 1:N
+        for α = 1:M
+            l[i, α, :] = rand(dD) * kw[:L]
+        end
+    end
+    return l
+end
+
 EV = nothing
 
 N=3
@@ -82,35 +130,31 @@ dU = Uniform(0, 1)
 
 θ = θ + broadcast(abs, NoiseM)
 
-Ω = fill(1.0, N)
+Ω = fill(100.0, N)
 
-p = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, L=0.7, θ=θ, Ω = Ω)
+p = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, L=0.3, θ=θ, Ω = Ω, sim=0.9)
 
-for i in 1:1000
 
-    p = generate_params(N, M; f_u=F_u, f_m=F_m, f_ρ=F_ρ, f_ω=F_ω, L=0.9, θ=θ, Ω = Ω)
+x0 = fill(0.0, (N+M))
+for i in 1:N
+    x0[i] = 0.1
+end
 
-    x0 = fill(0.0, (N+M))
-    for i in 1:N
-        x0[i] = 0.1
-    end
+for α in (N+1):(N+M)
+    x0[α] = 0.1
+end
 
-    for α in (N+1):(N+M)
-        x0[α] = 0.1
-    end
+tspan = (0.0, 15000.0)
 
-    tspan = (0.0, 15000.0)
+prob = ODEProblem(dxx!, x0, tspan, p)
 
-    prob = ODEProblem(dxx!, x0, tspan, p)
+sol =solve(prob, CVODE_BDF(), saveat = 1)
 
-    sol =solve(prob, CVODE_BDF(), saveat = 1)
-
-    jac = MiCRM_jac(p=p, sol=sol)
-    if ==(EV, nothing)
-        EV = complex(eigvals(jac))
-    else
-        EV = append!(EV, eigvals(jac))
-    end
+jac = MiCRM_jac(p=p, sol=sol)
+if ==(EV, nothing)
+    EV = complex(eigvals(jac))
+else
+    EV = append!(EV, eigvals(jac))
 end
 
 for α in (N+1):(N+M)
