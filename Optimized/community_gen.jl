@@ -144,18 +144,18 @@ for row in eachrow(community_df)
     Sim = MiC_test(p=p)
 
     if itr == 0
-        results = p.N, p.M, p.L, Sim[:NO], Sim[:CO], Sim[:SMAPE], Sim[:Eq_SMAPE], 
+        results = p.N, p.M, p.L, Sim[:NO], Sim[:NV], Sim[:CO], Sim[:CV], Sim[:SMAPE], Sim[:Eq_SMAPE], 
          Sim[:eq_t], Sim[:domEig], Sim[:domEigLV], Sim[:C_sur], Sim[:trc_max], Sim[:gR], Sim[:gR_LV]
     else 
-        temp = p.N, p.M, p.L, Sim[:NO], Sim[:CO], Sim[:SMAPE], Sim[:Eq_SMAPE], 
-         Sim[:eq_t], Sim[:domEig], Sim[:domEigLV], Sim[:C_sur], Sim[:trc_max], Sim[:gR], Sim[:gR_LV]
+        temp =  p.N, p.M, p.L, Sim[:NO], Sim[:NV], Sim[:CO], Sim[:CV], Sim[:SMAPE], Sim[:Eq_SMAPE], 
+        Sim[:eq_t], Sim[:domEig], Sim[:domEigLV], Sim[:C_sur], Sim[:trc_max], Sim[:gR], Sim[:gR_LV]
         results = vcat(results, temp)
     end
     itr += 1
 
 end
 
-C_names = [:N, :M ,:Leakage, :NO, :CO, :SMAPE, :Eq_SMAPE,
+C_names = [:N, :M ,:Leakage, :NO, :NV, :CO, :CV, :SMAPE, :Eq_SMAPE,
  :eq_t, :domEig, :domEigLV, :C_sur, :trc_max, :gR, :gR_LV]
 
 
@@ -163,4 +163,4 @@ C_names = [:N, :M ,:Leakage, :NO, :CO, :SMAPE, :Eq_SMAPE,
 df = DataFrame(results)
 df = rename(df, C_names)
 
-CSV.write("4x4_newTest.csv", df)
+CSV.write("4x4_newTest2.csv", df)

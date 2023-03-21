@@ -21,7 +21,7 @@ function Eff_Lv_Jac(;name, p_lv, symbolic = false, sol = nothing)
     sts = @variables t C[1:N](t)
 
     if sol != nothing
-        C = sol
+        C = sol[1:N, length(sol)]
     end
 
     LV_Jac = zeros(Num, N, N)

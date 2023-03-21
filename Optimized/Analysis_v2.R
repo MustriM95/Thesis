@@ -7,7 +7,7 @@ library(dplyr)
 library(ggplot2)
 library(tidyr)
 
-df = read.csv("3x3_opt_v2.csv")
+df = read.csv("3x3_newTest.csv")
 
 group_by_L <- function(x){
   
@@ -65,10 +65,10 @@ group_by_CO <- function(x){
 
 ## Data wrangling and subsetting
 
-Q <- quantile(log(df$MSE), probs=c(.25, .75), na.rm = FALSE)
-iqr <- IQR(log(df$MSE))
+Q <- quantile(df$SMAPE, probs=c(.25, .75), na.rm = FALSE)
+iqr <- IQR(df$SMAPE)
 
-df_NOut <- subset(df, log(df$MSE) > (Q[1] - 1.5*iqr) & log(df$MSE) < (Q[2]+1.5*iqr))
+df_NOut <- subset(df, df$SMAPE > (Q[1] - 1.5*iqr) & df$SMAPE < (Q[2]+1.5*iqr))
 
 df_NOut <- mutate(df, Group_NO = lapply(NO, group_by_NO))
 
@@ -90,11 +90,11 @@ df_NOut <- as.data.frame(lapply(df_NOut, unlist))
 ## Niche Overlap analysis
 
 ggplot(data=df_NOut, aes(y=SMAPE, x=as.factor(Group_NO))) + geom_violin() +
-  labs(title = "Mean Squared Error vs. Niche Overlap", y = "log(MSE)", x="Niche Overlap Group", color = "Leakage") + 
+  labs(title = "Mean Squared Error vs. Niche Overlap", y = "SMAPE", x="Niche Overlap Group", color = "Leakage") + 
   geom_boxplot(width=0.1) + theme(text = element_text(size = 18))
 
 ggplot(data=df_NOut, aes(y=Eq_SMAPE, x=as.factor(Group_NO))) + geom_violin() +
-  labs(title = "Equilibrium MSE vs. Niche Overlap", y = "log(Eq_MSE)", x="Niche Overlap Group", color = "Leakage") + 
+  labs(title = "Equilibrium MSE vs. Niche Overlap", y = "Eq_SMAPE", x="Niche Overlap Group", color = "Leakage") + 
   geom_boxplot(width=0.1) + theme(text = element_text(size = 18))
 
 ggplot(data=df_NOut, aes(y=-sqrt(abs(domEig)), x=as.factor(Group_NO))) + geom_violin() +

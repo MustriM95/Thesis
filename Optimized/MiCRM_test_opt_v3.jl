@@ -70,8 +70,10 @@ function MiC_test(; p, t_span = 1500)
 
 ## Calculating niche overlap as average pairwise cosine similarity
     NO = NiOv(p=p)
+    NV = NiVar(NO=NO, p=p)
 ## We calculate the cross feeding/cooperation index
     CO = CoOp(p=p)
+    CV = CoVar(CO=CO, p=p)
 
 ## Building the ODEs and initializing
 
@@ -181,7 +183,7 @@ function MiC_test(; p, t_span = 1500)
     end
 
 
-    Sim_res = Dict(:NO => NO, :CO => CO, :eq_t => eq_t,
+    Sim_res = Dict(:NO => NO, :NV => NV, :CO => CO, :CV => CV, :eq_t => eq_t,
      :domEig => domEig, :domEigLV => domEigLV, :SMAPE => SMAPE, :Eq_SMAPE => Eq_SMAPE,
      :C_sur => C_sur, :trc_max => trc_max, :gR => gR, :gR_LV =>gR_LV)
  end
