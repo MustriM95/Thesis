@@ -17,12 +17,13 @@ function NiVar(; NO, p)
     NV = 0.0
     for i in 1:N
         for j in (i+1):N
-            NV += (NO - cossim(p.u[i, :], p.u[j, :])*(2/(N*(N-1))))^2
+            NV += ((NO - cossim(p.u[i, :], p.u[j, :])^2)*(2/(N*(N-1))))
         end
     end
 
     return NV
 end
+
 
 function CoOp(; p)
     eff_L = zeros(N, M)
@@ -59,14 +60,20 @@ function CoVar(; CO, p)
     CV = 0.0
     for i in 1:N
         for j in (i+1):N
-            CV += (CO - cossim(p.u[i, :], eff_L[j, :])*(2/(N*(N-1))))^2
+            CV += ((CO - cossim(p.u[i, :], eff_L[j, :])^2)*(2/(N*(N-1))))
         end
     end
 
     return CV
 end
 
-function MiC_test(; p, t_span = 1500)
+condition(du, t, integrator) = norm(integrator(t, Val{1})) <= 1e-5
+
+affect!(integrator) = terminate!(integrator)
+
+cb = DiscreteCallback(condition, affect!)
+
+function MiC_test(; p, t_span = 10000)
 
 ## Calculating niche overlap as average pairwise cosine similarity
     NO = NiOv(p=p)
@@ -88,9 +95,7 @@ function MiC_test(; p, t_span = 1500)
 
     prob = ODEProblem(dxx!, CRi, (0.0, t_span), p)
 
-    cb = AutoAbstol()
-
-    sol =solve(prob, reltol=1e-9,abstol=1e-9, saveat=1, TRBDF2(), callback=cb, kwargshandle=KeywordArgSilent)
+    sol =solve(prob, reltol=1e-9,abstol=1e-9, CVODE_BDF(), callback=cb)
 
     Jac = MiCRM_jac(p=p, sol=sol)
 
@@ -121,33 +126,43 @@ function MiC_test(; p, t_span = 1500)
 
     prob_LV = ODEProblem(LV_dx!, Ci, (0.0, t_span), LV1)
 
-    sol_LV = solve(prob_LV, reltol=1e-9,abstol=1e-9, saveat=1, TRBDF2(), callback=cb, kwargshandle=KeywordArgSilent)
+    sol_LV = solve(prob_LV, reltol=1e-9,abstol=1e-9,
+     CVODE_BDF(max_convergence_failures = 3, max_hnil_warns = 1,
+      stability_limit_detect=true), callback=cb)
 
-    eq_t = 0
-    while norm(sol(eq_t, Val{1})) > 1e-5
-        eq_t += 1
-        if eq_t == length(sol)
-            println("Steady state not reached, increase t_span")
-            break
-        end
+    eq_t = floor(Int, sol.t[end])
+
+    if eq_t == t_span
+        println("Steady state not reached, increase t_span")
     end
+    
+    #while norm(sol(eq_t, Val{1})) > 1e-5 
+     #   eq_t += 1
+      #  if eq_t == t_span
+       #     println("Steady state not reached, increase t_span")
+        #    break
+        #end
+    #end
+    
 
-    max_iters = false
-
-    if eq_t > length(sol_LV)
-        eq_t = length(sol_LV)
-        max_iters = true
+    dtmin_err = sol_LV.retcode
+    
+    
+    if eq_t > sol_LV.t[length(sol_LV)]
+        eq_t = floor(Int, sol_LV.t[length(sol_LV)])
     end
+    
+    println(eq_t)
 
     C_eq = zeros(N)
     C_LV_eq = zeros(N)
 
     for i in 1:N
-        C_eq[i] = sol[i, eq_t]
+        C_eq[i] = sol(eq_t, idxs = i)
     end
 
     for i in 1:N
-        C_LV_eq[i] = sol_LV[i, eq_t]
+        C_LV_eq[i] = sol_LV(eq_t, idxs = i)
     end
 
     LV_Jac = Eff_Lv_Jac(p_lv = LV1, sol = sol)
@@ -164,7 +179,7 @@ function MiC_test(; p, t_span = 1500)
     SMAPE = 0.0
     for i in 1:N
         for t in 1:Int(eq_t)
-            SMAPE += log(abs(sol_LV[i, t]/sol[i, t]))/(eq_t*N)
+            SMAPE += log(abs(sol_LV(t, idxs=i)/sol(t, idxs=i)))/(eq_t*N)
         end
     end
 
@@ -177,7 +192,7 @@ function MiC_test(; p, t_span = 1500)
 
     C_sur = 0.0
     for i in 1:N
-        if sol[i, eq_t] > 1e-6
+        if sol(eq_t, idxs=i) > 1e-6
             C_sur += 1/N
         end
     end
@@ -185,5 +200,5 @@ function MiC_test(; p, t_span = 1500)
 
     Sim_res = Dict(:NO => NO, :NV => NV, :CO => CO, :CV => CV, :eq_t => eq_t,
      :domEig => domEig, :domEigLV => domEigLV, :SMAPE => SMAPE, :Eq_SMAPE => Eq_SMAPE,
-     :C_sur => C_sur, :trc_max => trc_max, :gR => gR, :gR_LV =>gR_LV)
+     :C_sur => C_sur, :trc_max => trc_max, :gR => gR, :gR_LV => gR_LV, :dtmin_err => dtmin_err)
  end
