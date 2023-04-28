@@ -116,12 +116,12 @@ sign_match <- function(x, y){
 }
 
 DE_conf_test <- function(x){
-  upper_tol = 1.20
-  lower_tol = 0.80
+  upper_tol = 0.20
+  lower_tol = -0.20
   result <- case_when(
-    x <= lower_tol ~ "U",
+    x <= lower_tol ~ "O",
     lower_tol < x && x < upper_tol ~ "N",
-    upper_tol <= x ~ "O"
+    upper_tol <= x ~ "U"
   )
   
   return(result)
@@ -158,13 +158,16 @@ rm_filtered <- mutate(rm_filtered, SMAPE_test = lapply(SMAPE, conf_test))
 rm_filtered <- mutate(rm_filtered, Eq_SMAPE_test = lapply(Eq_SMAPE, conf_test))
 rm_filtered <- mutate(rm_filtered, ReDomEig = lapply(domEig, Re_complexify))
 rm_filtered <- mutate(rm_filtered, ReDomEigLV = lapply(domEigLV, Re_complexify))
-rm_filtered <- mutate(rm_filtered, ReDomEigRatio =
-                        as.numeric(ReDomEigLV)/as.numeric(ReDomEig))
+rm_filtered <- mutate(rm_filtered, ReDomEigSRR =
+                        (as.numeric(ReDomEigLV) - as.numeric(ReDomEig))/as.numeric(ReDomEig))
+rm_filtered <- mutate(rm_filtered, gRSRR =
+                        (as.numeric(gR) - as.numeric(gR_LV))/as.numeric(gR))
 
 rm_filtered <- mutate(rm_filtered, DE_Scomp = mapply(sign_match, ReDomEig, ReDomEigLV))
-rm_filtered <- mutate(rm_filtered, DE_test = lapply(ReDomEigRatio, DE_conf_test))
+rm_filtered <- mutate(rm_filtered, DE_test = lapply(ReDomEigSRR, DE_conf_test))
 
-hist(exp(as.numeric(rm_filtered$Eq_SMAPE_rs)))
+rm_filtered <- mutate(rm_filtered, gR_Scomp = mapply(sign_match, gR, gR_LV))
+rm_filtered <- mutate(rm_filtered, gR_test = lapply(gRSRR, DE_conf_test))
 
 rm_filtered <- mutate(rm_filtered, Group_NO = lapply(NO, group_by_NO))
 
@@ -188,11 +191,12 @@ ggplot(df_NOut, aes(x=Re(complexify(domEig)), y=Re(complexify(domEigLV)))) +
   ylim(-2.5, 2.5) + ylab("LV-DE") + xlab("DE") +
   scale_color_brewer(palette="YlOrRd")
 
-ggplot(df_NOut, aes(y=log(eq_t), x=log(trc_max))) +
+ggplot(df_NOut, aes(x=gR, y=gR_LV)) +
   geom_point(aes(color = as.factor(Eq_SMAPE_test) )) + 
   geom_abline(slope=1, intercept = 0) + 
   theme(text = element_text(size = 24)) + 
   guides(color=guide_legend(title="EqConf")) +
+  xlab("MiCRM Reactivity") + ylab("LVA Reactivity") +
   scale_color_brewer(palette="YlOrRd")
 
 ################################################################################
@@ -225,7 +229,29 @@ ggplot(data=df_NOut, aes(x = Group_NO, y =..count.. / sum(..count..), fill=SMAPE
   guides(fill=guide_legend(title="Trajectory Confidence")) + 
   theme(text = element_text(size = 24))
   
+ggplot(data=df_NOut, aes(x = Eq_SMAPE_test, y =..count.. / sum(..count..), fill=DE_Scomp)) + 
+  geom_bar(position = "fill") + ylab("Proportion") + xlab("Equilibrium Confidence") +
+  scale_fill_brewer(palette = "Spectral") +
+  guides(fill=guide_legend(title="Stability Match")) + 
+  theme(text = element_text(size = 24))
 
+ggplot(data=df_NOut, aes(x = Eq_SMAPE_test, y =..count.. / sum(..count..), fill=DE_test)) + 
+  geom_bar(position = "fill") + ylab("Proportion") + xlab("Equilibrium Confidence") +
+  scale_fill_brewer(palette = "Spectral") +
+  guides(fill=guide_legend(title="Stability Confidence")) + 
+  theme(text = element_text(size = 24))
+
+ggplot(data=df_NOut, aes(x = Eq_SMAPE_test, y =..count.. / sum(..count..), fill=gR_Scomp)) + 
+  geom_bar(position = "fill") + ylab("Proportion") + xlab("Equilibrium Confidence") +
+  scale_fill_brewer(palette = "YlOrRd") +
+  guides(fill=guide_legend(title="Reactivity Match")) + 
+  theme(text = element_text(size = 24))
+
+ggplot(data=df_NOut, aes(x = Eq_SMAPE_test, y =..count.. / sum(..count..), fill=gR_test)) + 
+  geom_bar(position = "fill") + ylab("Proportion") + xlab("Equilibrium Confidence") +
+  scale_fill_brewer(palette = "YlOrRd") +
+  guides(fill=guide_legend(title="Reactivity Confidence")) + 
+  theme(text = element_text(size = 24))
 ###############################################################################
 
 modlm <- glm(Eq_SMAPE_rs ~ Leakage*CO*NO, family = gaussian, 
@@ -422,7 +448,7 @@ ggplot(df_NOut, aes(x = gR_LV, fill=as.factor(Group_CO))) +
 max(df_NOut$gR)
 min(df_NOut$gR_LV)
 
-ggplot(df_NOut, aes(Group_CO, Leakage, fill= gR )) + 
+ggplot(df_NOut, aes(interaction(Group_NO, Group_CO), Leakage, fill= Eq_SMAPE_rs )) + 
   geom_tile() + scale_fill_gradientn(colours=c("navyblue", "darkmagenta", "darkorange1"))
 
 ggplot(df_NOut, aes(Group_CO, Leakage, fill= gR_LV )) + 
@@ -470,7 +496,7 @@ ggplot(df_NOut, aes(Group_L, c=(Group_CO, Group_NO), fill= Eq_SMAPE_sat )) +
 
 ###########################################################################################
 
-ggplot(df_NOut, aes(Group_CO, Leakage, fill= Re(complexify(domEig)) )) + 
+ggplot(df_NOut, aes(Group_NO, Leakage, fill= ReDomEigSRR )) + 
   geom_tile() + scale_fill_gradientn(colours=c("navyblue", "darkmagenta", "darkorange1"))
 
 ggplot(df_NOut, aes(Group_CO, Leakage, fill= Re(complexify(domEigLV)) )) + 
@@ -501,36 +527,46 @@ ggplot(df_NOut, aes(Group_NO, Leakage, fill= log(trc_max ))) +
 ggplot(df_NOut, aes(Group_CO, Leakage, fill=log10(eq_t ) )) + 
   geom_tile() + scale_fill_gradientn(colours=c("navyblue", "darkmagenta", "darkorange1"))
 
-ggplot(df_NOut, aes(Group_CO, Leakage,, fill= log10(trc_max ))) + 
-  geom_tile() + scale_fill_gradientn(colours=c("navyblue", "darkmagenta", "darkorange1"))
-
 ###########################################################################################
 
 ggplot(df_NOut, aes(Group_CO, Group_NO, fill=log10(eq_t ) )) + 
   geom_tile() + scale_fill_gradientn(colours=c("navyblue", "darkmagenta", "darkorange1"))
 
-ggplot(df_NOut, aes(Group_CO, Group_NO, fill= log(trc_max ))) + 
+ggplot(df_NOut, aes(Group_CO, Group_NO, fill= log10(trc_max ))) + 
   geom_tile() + scale_fill_gradientn(colours=c("navyblue", "darkmagenta", "darkorange1"))
 
 
 
 ###########################################################################################
 
-ggplot(df_NOut, aes(x = log10(trc_max), fill=as.factor(dtmin_err))) +
+ggplot(df_NOut, aes(x = log10(trc_max), fill=as.factor(DE_test))) +
   geom_density(alpha = 0.6) + theme(text = element_text(size = 24))
 
-ggplot(df_NOut, aes(x = log10(eq_t ), fill=as.factor(dtmin_err))) +
+ggplot(df_NOut, aes(x = log10(trc_max), fill=as.factor(dtmin_err))) +
   geom_density(alpha = 0.6) + theme(text = element_text(size = 24))
 
 ###########################################################################################
 
-ggplot(df_NOut, aes(x = log(trc_max), fill=as.factor(SMAPE_test))) +
-  geom_density(alpha = 0.6) + theme(text = element_text(size = 24)) + xlim(c(-20, 1))
+ggplot(df_NOut, aes(x = log10(trc_max), fill=as.factor(SMAPE_test))) +
+  geom_density(alpha = 0.6) + theme(text = element_text(size = 24)) + xlim(c(-7, 1)) + 
+  scale_fill_brewer(palette = "Spectral") +
+  guides(fill=guide_legend(title="TrajConf")) +
+  xlab("log10(return time ratio)") + 
+  geom_vline(xintercept = -2, color = "magenta", linetype="dashed") + 
+  geom_vline(xintercept = -1, color = "red", linetype="dashed")
 
-ggplot(df_NOut, aes(x = log10(eq_t ), fill=as.factor(Eq_SMAPE_test))) +
-  geom_density(alpha = 0.6) + theme(text = element_text(size = 24)) 
+ggplot(df_NOut, aes(x = log10(trc_max), fill=as.factor(gR_Scomp))) +
+  geom_density(alpha = 0.6) + theme(text = element_text(size = 24)) + 
+  scale_fill_brewer(palette = "Spectral") +
+  guides(fill=guide_legend(title="Reactivity Match")) +
+  xlab("log10(return time ratio)") +
+  geom_vline(xintercept = -2, color = "magenta", linetype="dashed") + 
+  geom_vline(xintercept = -1, color = "red", linetype="dashed")
 
-plot(log10(df_NOut$trc_max), log10(df_NOut$eq_t))
-
-
-cor.test(df_NOut$trc_max, df_NOut$eq_t)
+ggplot(df_NOut, aes(y=SMAPE, x=log(trc_max))) +
+  geom_point(aes(color = as.factor(Eq_SMAPE_test) ), alpha=0.6) + 
+  geom_abline(slope=1, intercept = 0) + 
+  theme(text = element_text(size = 24)) + 
+  guides(color=guide_legend(title="EqConf")) +
+  ylab("LV-DE") + xlab("DE") + 
+  scale_color_brewer(palette="YlOrRd")
