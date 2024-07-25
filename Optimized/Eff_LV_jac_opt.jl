@@ -21,26 +21,9 @@ function Eff_Lv_Jac(; p_lv, sol)
 
     LV_Jac = zeros(N, N)
 
-    for i in 1:N
-        LV_Jac[i, i] = r[i] + 2*ℵ[i, i]*C[i]
-        for j in 1:N
-            if j != i
-                LV_Jac[i, i] += ℵ[i, j]*C[j]
-            end
-        end
-    end
-
-    for i in 1:N
-        for j in (i+1):N
-            LV_Jac[i, j] = ℵ[i, j]*C[i]
-        end
-    end
-
-    for i in 1:N
-        for j in (i+1):N
-            LV_Jac[j, i] = ℵ[j, i]*C[i]
-        end
-    end
+    LV_Jac = [ℵ[i, j]*C[i] for i in 1:N, j in 1:N]
+# reset diagonal
+    LV_Jac[diagind(LV_Jac)] .= [r[i] + ℵ[i, i]*C[i] + sum(ℵ[i, j]*C[j] for j in 1:N) for i in 1:N]
 
     return(LV_Jac)
 
