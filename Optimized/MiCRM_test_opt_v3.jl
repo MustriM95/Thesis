@@ -148,8 +148,8 @@ function MiC_test(; p, t_span = 10000)
     dtmin_err = sol_LV.retcode
     
     
-    if eq_t > sol_LV.t[length(sol_LV)]
-        eq_t = floor(Int, sol_LV.t[length(sol_LV)])
+    if eq_t > sol_LV.t[end]
+        eq_t = floor(Int, sol_LV.t[end])
     end
     
     println(eq_t)

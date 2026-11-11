@@ -1,9 +1,10 @@
 cd("C:\\Users\\micho\\github\\Thesis")
-cd("/home/michael/github*Thesis")
+#cd("/home/michael/github*Thesis")
 
 using Distributions, LinearAlgebra, DataFrames, CSV
 using DifferentialEquations, DiffEqCallbacks
 using SciMLBase, Sundials
+using JLD
 
 
 include("micrm_params.jl")
@@ -15,17 +16,17 @@ include("LV_dx.jl")
 include("MiCRM_jac_opt.jl")
 include("Eff_LV_jac_opt.jl")
 
-#include("C:\\Users\\micho\\github\\Thesis\\Functions\\g_react.jl")
-include("/home/michael/github*Thesis/Functions/g_react.jl")
+include("C:\\Users\\micho\\github\\Thesis\\Functions\\g_react.jl")
+#include("/home/michael/github*Thesis/Functions/g_react.jl")
 
-sim_draw = [0.5, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6]
+sim_draw = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6]
 
 Nsim_draw = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
 L_draw = [0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
 
-N=13
-M=13
+N=6
+M=6
 
 noise = Normal(1.0, 1.0)
 NoiseM = rand(noise, N, M)  
@@ -61,6 +62,8 @@ for L in L_draw
     end
 end
 
+#save("Data_2024/3_communities.jld", "community_df", community_df)
+
 "p_1 = NamedTuple(community_df[20, :])
 
 test = MiC_test(p=p_1)
@@ -71,7 +74,7 @@ itr = 0
 results = nothing
 for row in eachrow(community_df)
     p = NamedTuple(row)
-    Sim = MiC_test(p=p, t_span = 50000)
+    Sim = MiC_test(p=p, t_span = 200000)
 
     if itr == 0
         results = p.N, p.M, p.L, Sim[:NO], Sim[:NV], Sim[:CO], Sim[:CV], Sim[:SMAPE], Sim[:Eq_SMAPE], 
@@ -93,4 +96,4 @@ C_names = [:N, :M ,:Leakage, :NO, :NV, :CO, :CV, :SMAPE, :Eq_SMAPE,
 df = DataFrame(results)
 df = rename(df, C_names)
 
-CSV.write("Data_02/13x13.csv", df)
+CSV.write("Data_2026/6x6.csv", df)

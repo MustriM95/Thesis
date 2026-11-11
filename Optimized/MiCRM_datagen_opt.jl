@@ -71,13 +71,13 @@ include("Eff_LV_p_opt.jl")
 include("LV_dx.jl")
 include("MiCRM_jac_opt.jl")
 include("Eff_LV_jac_opt.jl")
-include("MiCRM_test_opt_v2.jl")
+include("MiCRM_test_opt_v3.jl")
 include("C:\\Users\\micho\\github\\Thesis\\Functions\\g_react.jl")
 
 t_span = 100000.0
 
-N = 14
-M = 14
+N = 5
+M = 5
 
 θ = zeros(N, M)
 
@@ -119,5 +119,5 @@ C_names = [:N, :M ,:Leakage, :Noise_m, :Noise_std, :NO, :CO, :SMAPE, :Eq_SMAPE,
 df = DataFrame(results)
 df = rename(df, C_names)
 
-CSV.write("4x4_gR.csv", df)
-writedlm("4X4_gR.csv", eachrow(df))
+CSV.write("5x5_2024.csv", df)
+writedlm("4X4_2024.csv", eachrow(df))

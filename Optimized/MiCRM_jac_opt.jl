@@ -14,8 +14,8 @@ function MiCRM_jac(; p, sol)
     m = p.m
     u = p.u
 
-    C = sol[1:N, length(sol)]
-    R = sol[(N+1):(N+M), length(sol)]
+    C = sol[1:N, end]
+    R = sol[(N+1):(N+M), end]
 
     Jac = zeros((N+M), (N+M))
 

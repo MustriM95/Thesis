@@ -23,8 +23,8 @@ function Eff_LV_params(; p, sol, verbose = false)
     δ(x, y) = ==(x, y)
 
 ## Equilibrium values are loaded into their respective vectors
-    Ceq = sol[1:N, length(sol)]
-    Req = sol[(N+1):(N+M), length(sol)]
+    Ceq = sol[1:N, end]
+    Req = sol[(N+1):(N+M), end]
 
 ## LV parameters are initialized
     A = zeros(M, M) # A matrix
@@ -38,9 +38,9 @@ function Eff_LV_params(; p, sol, verbose = false)
 ## solutions
     for α in 1:M
         for β in 1:M
-            A[α, β] = -ω[α]
+            A[α, β] = -ω[α] * δ(α, β)
             for i in 1:N
-                A[α, β] += l[i, α, β] * u[i, β] * Ceq[i] -
+                A[α, β] += l[i, β, α] * u[i, β] * Ceq[i] -
                 u[i, β] * Ceq[i] * δ(α, β)
             end
         end
@@ -52,8 +52,8 @@ function Eff_LV_params(; p, sol, verbose = false)
         for j in 1:N
             for β in 1:M
                 for γ in 1:M
-                    ∂R[α, j] += inv(A)[α, β] * u[j, β] * Req[γ]*(δ(β, γ)
-                    - l[j, β, γ])
+                    ∂R[α, j] += inv(A)[α, β] * u[j, γ] * Req[γ]*(δ(β, γ)
+                    - l[j, γ, β])
                 end
             end
         end

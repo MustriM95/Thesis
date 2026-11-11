@@ -17,7 +17,7 @@ function Eff_Lv_Jac(; p_lv, sol)
     r = p_lv.r
 
 ## We define our state variables
-    C = sol[1:N, length(sol)]
+    C = sol[1:N, end]
 
     LV_Jac = zeros(N, N)
 
